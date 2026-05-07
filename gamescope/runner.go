@@ -22,6 +22,12 @@ func New(opts ...Option) *Runner {
 	return &Runner{Options: ApplyOptions(opts...)}
 }
 
+func (r *Runner) GetOptions() Options {
+	o := r.Options
+	o.ExtraArgs = append([]string(nil), r.ExtraArgs...)
+	return o
+}
+
 func (r *Runner) GetOption(key string) (interface{}, error) {
 	return gr.GetOption(r.Options, key)
 

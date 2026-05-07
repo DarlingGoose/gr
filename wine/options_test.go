@@ -4,6 +4,7 @@ import "testing"
 
 func TestApplyOptionsAndGetOptions(t *testing.T) {
 	r := New(
+		WithName("custom-wine"),
 		WithWineBin("wine-custom"),
 		WithWineTricksBin("winetricks-custom"),
 		WithDefaultPrefix("/tmp/prefix"),
@@ -11,6 +12,9 @@ func TestApplyOptionsAndGetOptions(t *testing.T) {
 
 	o := r.GetOptions()
 
+	if got := o.Name; got != "custom-wine" {
+		t.Fatalf("Name = %q, want %q", got, "custom-wine")
+	}
 	if got := o.WineBin; got != "wine-custom" {
 		t.Fatalf("WineBin = %q, want %q", got, "wine-custom")
 	}
@@ -25,6 +29,9 @@ func TestApplyOptionsAndGetOptions(t *testing.T) {
 func TestApplyOptionsDefaults(t *testing.T) {
 	o := ApplyOptions()
 
+	if got := o.Name; got != "wine" {
+		t.Fatalf("Name = %q, want %q", got, "wine")
+	}
 	if got := o.WineBin; got != "wine" {
 		t.Fatalf("WineBin = %q, want %q", got, "wine")
 	}

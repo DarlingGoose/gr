@@ -3,6 +3,7 @@ package wine
 type Option func(*Options)
 
 type Options struct {
+	Name          string
 	WineBin       string
 	WineTricksBin string
 	DefaultPrefix string
@@ -10,6 +11,7 @@ type Options struct {
 
 func ApplyOptions(opts ...Option) Options {
 	o := Options{
+		Name:          "wine",
 		WineBin:       "wine",
 		WineTricksBin: "winetricks",
 	}
@@ -21,6 +23,14 @@ func ApplyOptions(opts ...Option) Options {
 	}
 
 	return o
+}
+
+func WithName(name string) Option {
+	return func(r *Options) {
+		if name != "" {
+			r.Name = name
+		}
+	}
 }
 
 func WithWineBin(path string) Option {

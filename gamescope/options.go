@@ -3,6 +3,7 @@ package gamescope
 type Option func(*Options)
 
 type Options struct {
+	Name         string
 	GamescopeBin string
 	WineBin      string
 
@@ -28,6 +29,7 @@ type Options struct {
 
 func ApplyOptions(opts ...Option) Options {
 	o := Options{
+		Name:         "gamescope",
 		GamescopeBin: "gamescope",
 		WineBin:      "wine",
 	}
@@ -41,6 +43,14 @@ func ApplyOptions(opts ...Option) Options {
 	o.ExtraArgs = append([]string(nil), o.ExtraArgs...)
 
 	return o
+}
+
+func WithName(name string) Option {
+	return func(r *Options) {
+		if name != "" {
+			r.Name = name
+		}
+	}
 }
 
 func WithGamescopeBin(path string) Option {
