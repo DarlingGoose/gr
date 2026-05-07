@@ -15,42 +15,19 @@ import (
 )
 
 type Runner struct {
-	GamescopeBin string
-	WineBin      string
-
-	DefaultWinePrefix string
-
-	UseWine bool
-
-	Width        int
-	Height       int
-	RefreshRate  int
-	OutputWidth  int
-	OutputHeight int
-
-	Fullscreen bool
-	Borderless bool
-	ForceGrab  bool
-
-	SteamDeckMode bool
-	ExposeWayland bool
-
-	ExtraArgs []string
+	Options
 }
 
 func New(opts ...Option) *Runner {
-	r := &Runner{
-		GamescopeBin: "gamescope",
-		WineBin:      "wine",
-	}
+	return &Runner{Options: ApplyOptions(opts...)}
+}
 
-	for _, opt := range opts {
-		if opt != nil {
-			opt(r)
-		}
-	}
+func (r *Runner) GetOption(key string) (interface{}, error) {
+	return gr.GetOption(r.Options, key)
 
-	return r
+}
+func (r *Runner) GetOptionKeys() ([]string, error) {
+	return gr.GetOptionKeys(r.Options)
 }
 
 func (r *Runner) Run(ctx context.Context, target string, opts ...gr.Option) error {

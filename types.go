@@ -31,6 +31,8 @@ type Runner interface {
 	Run(ctx context.Context, cmd string, opts ...Option) error
 	List(ctx context.Context, opts ...Option) ([]*Process, error)
 	Find(ctx context.Context, opts ...Option) (*Process, error)
+	GetOption(key string) (interface{}, error)
+	GetOptionKeys() ([]string, error)
 }
 
 type Options struct {

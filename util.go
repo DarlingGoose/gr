@@ -1,10 +1,13 @@
 package gr
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"unicode"
 
@@ -103,4 +106,40 @@ func GetWinePrefix(programName, game string) (string, error) {
 	}
 	return filepath.Join(userDir, ".local", programName, game), nil
 
+}
+
+func GetOption(opt interface{}, key string) (interface{}, error) {
+	d, err := json.Marshal(opt)
+	if err != nil {
+		return nil, err
+	}
+	data := map[string]interface{}{}
+	err = json.Unmarshal(d, &data)
+	if err != nil {
+		return nil, err
+	}
+	v, ok := data[key]
+	if !ok {
+		return nil, fmt.Errorf("key does not exist: %s", key)
+	}
+
+	return v, nil
+}
+
+func GetOptionKeys(opt interface{}) ([]string, error) {
+	d, err := json.Marshal(opt)
+	if err != nil {
+		return nil, err
+	}
+	data := map[string]interface{}{}
+	err = json.Unmarshal(d, &data)
+	if err != nil {
+		return nil, err
+	}
+	var keys []string
+	for k := range data {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys, nil
 }

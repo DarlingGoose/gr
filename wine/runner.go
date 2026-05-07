@@ -16,24 +16,23 @@ import (
 )
 
 type Runner struct {
-	WineBin       string
-	WineTricksBin string
-	DefaultPrefix string
+	Options
+}
+
+func (r *Runner) GetOptionKeys() ([]string, error) {
+	return gr.GetOptionKeys(r.Options)
+}
+
+func (r *Runner) GetOption(key string) (interface{}, error) {
+	return gr.GetOption(r.Options, key)
 }
 
 func New(opts ...Option) *Runner {
-	r := &Runner{
-		WineBin:       "wine",
-		WineTricksBin: "winetricks",
-	}
+	return &Runner{Options: ApplyOptions(opts...)}
+}
 
-	for _, opt := range opts {
-		if opt != nil {
-			opt(r)
-		}
-	}
-
-	return r
+func (r *Runner) GetOptions() Options {
+	return r.Options
 }
 
 func (r *Runner) Run(ctx context.Context, command string, opts ...gr.Option) error {
