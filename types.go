@@ -1,0 +1,67 @@
+package gr
+
+import (
+	"context"
+	"os/exec"
+)
+
+type Status int
+
+const (
+	StatusUnknown Status = iota
+	StatusRunning
+	StatusExited
+	StatusStopped
+)
+
+func (s Status) String() string {
+	switch s {
+	case StatusRunning:
+		return "running"
+	case StatusExited:
+		return "exited"
+	case StatusStopped:
+		return "stopped"
+	default:
+		return "unknown"
+	}
+}
+
+type Runner interface {
+	Run(ctx context.Context, cmd string, opts ...Option) error
+	List(ctx context.Context, opts ...Option) ([]*Process, error)
+	Find(ctx context.Context, opts ...Option) (*Process, error)
+}
+
+type Options struct {
+	background bool
+	args       []string
+	envs       []string
+
+	// For Wine.
+	systemArch string // "32", "64", "win32", "win64"
+	wineprefix string
+
+	// Dependencies to install before running, usually via winetricks.
+	dependencies []string
+
+	// Search/filter options.
+	name      string
+	pid       int
+	session   string
+	sessionID string
+}
+
+type Process struct {
+	ImageName string
+	PID       int
+	Session   string
+	SessionID string
+	MemUsage  string
+	Status    Status
+
+	Cmdline []string
+	Environ []string
+
+	Cmd *exec.Cmd
+}
