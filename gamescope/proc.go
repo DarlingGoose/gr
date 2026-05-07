@@ -112,28 +112,6 @@ func readProcNulFile(path string) ([]string, error) {
 	return out, nil
 }
 
-func envHasWinePrefix(env []string, wantedPrefix string) bool {
-	for _, e := range env {
-		k, v, ok := strings.Cut(e, "=")
-		if !ok {
-			continue
-		}
-
-		if k != "WINEPREFIX" {
-			continue
-		}
-
-		got, err := filepath.Abs(v)
-		if err != nil {
-			got = v
-		}
-
-		return filepath.Clean(got) == filepath.Clean(wantedPrefix)
-	}
-
-	return false
-}
-
 func imageName(cmdline []string) string {
 	for _, arg := range cmdline {
 		lower := strings.ToLower(arg)

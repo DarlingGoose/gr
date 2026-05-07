@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -195,20 +194,6 @@ func upsertEnv(env []string, key, value string) []string {
 	}
 
 	return append(env, prefix+value)
-}
-
-func wineImageName(cmdline []string) string {
-	for _, arg := range cmdline {
-		if strings.HasSuffix(strings.ToLower(arg), ".exe") {
-			return filepath.Base(arg)
-		}
-	}
-
-	if len(cmdline) > 0 {
-		return filepath.Base(cmdline[0])
-	}
-
-	return ""
 }
 
 var tasklistLineRE = regexp.MustCompile(`^(.+?)\s+([0-9]+)\s+(.+?)\s+([0-9]+)\s+(.+)$`)
