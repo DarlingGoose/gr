@@ -30,6 +30,22 @@ func (o Options) Dependencies() []string {
 	return append([]string(nil), o.dependencies...)
 }
 
+func (o Options) Name() string {
+	return o.name
+}
+
+func (o Options) PID() int {
+	return o.pid
+}
+
+func (o Options) Session() string {
+	return o.session
+}
+
+func (o Options) SessionID() string {
+	return o.sessionID
+}
+
 func (o Options) MatchProcess(p *Process) bool {
 	if p == nil {
 		return false
