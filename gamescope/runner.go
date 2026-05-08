@@ -79,9 +79,19 @@ func (r *Runner) Run(ctx context.Context, target string, opts ...gr.Option) (*gr
 			return nil, fmt.Errorf("start gamescope: %w", err)
 		}
 		proc := processFromCmd(cmd, r.GamescopeBin, args, env, gr.StatusRunning)
-		if pr, _ := r.List(ctx, gr.WithName(filepath.Base(target))); len(pr) == 1 {
-			proc.WinePID = pr[0].PID
+		c := 10
+		for {
+			if pr, _ := r.List(ctx, gr.WithName(filepath.Base(gr.FindExe(args...))), gr.WithWinePrefix(o.WinePrefix())); len(pr) == 1 {
+				proc.WinePID = pr[0].PID
+				break
+			}
+			if c <= 0 {
+				break
+			}
+			time.Sleep(2 * time.Second)
+			c--
 		}
+
 		stopGamescopeOnCancel(ctx, proc.PID, r.wineCleanup(prefix, env))
 		return proc, nil
 	}
@@ -91,8 +101,17 @@ func (r *Runner) Run(ctx context.Context, target string, opts ...gr.Option) (*gr
 	}
 
 	proc := processFromCmd(cmd, r.GamescopeBin, args, env, gr.StatusRunning)
-	if pr, _ := r.List(ctx, gr.WithName(filepath.Base(target))); len(pr) == 1 {
-		proc.WinePID = pr[0].PID
+	c := 10
+	for {
+		if pr, _ := r.List(ctx, gr.WithName(filepath.Base(gr.FindExe(args...))), gr.WithWinePrefix(o.WinePrefix())); len(pr) == 1 {
+			proc.WinePID = pr[0].PID
+			break
+		}
+		if c <= 0 {
+			break
+		}
+		time.Sleep(2 * time.Second)
+		c--
 	}
 	cleanup := r.wineCleanup(prefix, env)
 	defer cleanup()

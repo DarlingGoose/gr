@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/DarlingGoose/gr"
 )
@@ -80,8 +81,17 @@ func (r *Runner) Run(ctx context.Context, command string, opts ...gr.Option) (*g
 			return nil, fmt.Errorf("start wine command: %w", err)
 		}
 		proc := processFromCmd(cmd, r.WineBin, args, env, gr.StatusRunning)
-		if pr, _ := r.List(ctx, gr.WithName(filepath.Base(command))); len(pr) == 1 {
-			proc.WinePID = pr[0].PID
+		c := 10
+		for {
+			if pr, _ := r.List(ctx, gr.WithName(filepath.Base(gr.FindExe(args...))), gr.WithWinePrefix(o.WinePrefix())); len(pr) == 1 {
+				proc.WinePID = pr[0].PID
+				break
+			}
+			if c <= 0 {
+				break
+			}
+			time.Sleep(2 * time.Second)
+			c--
 		}
 		return proc, nil
 	}
@@ -91,8 +101,17 @@ func (r *Runner) Run(ctx context.Context, command string, opts ...gr.Option) (*g
 	}
 
 	proc := processFromCmd(cmd, r.WineBin, args, env, gr.StatusRunning)
-	if pr, _ := r.List(ctx, gr.WithName(filepath.Base(command))); len(pr) == 1 {
-		proc.WinePID = pr[0].PID
+	c := 10
+	for {
+		if pr, _ := r.List(ctx, gr.WithName(filepath.Base(gr.FindExe(args...))), gr.WithWinePrefix(o.WinePrefix())); len(pr) == 1 {
+			proc.WinePID = pr[0].PID
+			break
+		}
+		if c <= 0 {
+			break
+		}
+		time.Sleep(2 * time.Second)
+		c--
 	}
 	if err := cmd.Wait(); err != nil {
 		proc.Status = gr.StatusExited

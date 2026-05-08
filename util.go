@@ -143,3 +143,13 @@ func GetOptionKeys(opt interface{}) ([]string, error) {
 	sort.Strings(keys)
 	return keys, nil
 }
+
+func FindExe(args ...string) string {
+	for _, a := range args {
+		if filepath.Ext(filepath.Base(a)) == ".exe" {
+			return a
+		}
+	}
+	return ""
+
+}
