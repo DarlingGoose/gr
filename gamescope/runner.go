@@ -144,20 +144,26 @@ func (r *Runner) List(ctx context.Context, opts ...gr.Option) ([]*gr.Process, er
 		if prefix == "" {
 			prefix = r.DefaultWinePrefix
 		}
-
+		println(prefix)
+		println(o.Name())
 		if prefix == "" {
 			return nil, errors.New("wine prefix is required for wine process listing")
 		}
 		env := r.buildEnv(o)
+		ctx, canel := context.WithTimeout(ctx, 5*time.Second)
+		defer canel()
 		cmd := exec.CommandContext(ctx, r.WineBin, "tasklist")
 		cmd.Env = env
 		var stdout bytes.Buffer
 		var stderr bytes.Buffer
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
+		println("running cmd")
 		if err := cmd.Run(); err != nil {
+			println("err", err.Error())
 			return nil, fmt.Errorf("wine tasklist failed: %w: %s", err, strings.TrimSpace(stderr.String()))
 		}
+		println(stdout.String())
 		process := wine.ParseTasklist(stdout.String())
 		filtered := make([]*gr.Process, 0, len(process))
 		for _, p := range process {
