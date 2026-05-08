@@ -4,6 +4,7 @@ import "strings"
 
 type WineEnvConfig struct {
 	Lang                 string
+	LCAll                string
 	WineDebug            string
 	DisableWineMenuBuild bool
 	QuietDXVKLogs        bool
@@ -14,6 +15,7 @@ type WineEnvConfig struct {
 func DefaultWineEnvConfig() WineEnvConfig {
 	return WineEnvConfig{
 		Lang:                 "C.UTF-8",
+		LCAll:                "C.UTF-8",
 		WineDebug:            "-all",
 		DisableWineMenuBuild: true,
 		QuietDXVKLogs:        true,
@@ -26,6 +28,10 @@ func RecommendedWineEnv(cfg WineEnvConfig) []string {
 
 	if cfg.Lang != "" {
 		env = appendEnv(env, "LANG", cfg.Lang)
+	}
+
+	if cfg.LCAll != "" {
+		env = appendEnv(env, "LC_ALL", cfg.LCAll)
 	}
 
 	if cfg.WineDebug != "" {

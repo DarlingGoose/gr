@@ -64,6 +64,45 @@ func TestAutoOptionsForExeUsesConfiguredWorkingDir(t *testing.T) {
 	}
 }
 
+func TestAutoOptionsForExeDetectsJapaneseLocaleMarkers(t *testing.T) {
+	exePath := filepath.Join(t.TempDir(), "Game.exe")
+	writeMinimalPE(t, exePath, 0x14c)
+	f, err := os.OpenFile(exePath, os.O_APPEND|os.O_WRONLY, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.WriteString("Font.CharsetSHIFTJIS_CHARSET"); err != nil {
+		_ = f.Close()
+		t.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	defaults, err := AutoOptionsForExe(exePath, DefaultOptionsConfig{
+		SkipDependencyCheck: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	o := gr.ApplyOptions(defaults.Options...)
+	wantEnv := map[string]bool{
+		"LANG=ja_JP.UTF-8":   false,
+		"LC_ALL=ja_JP.UTF-8": false,
+	}
+	for _, env := range o.Envs() {
+		if _, ok := wantEnv[env]; ok {
+			wantEnv[env] = true
+		}
+	}
+	for env, found := range wantEnv {
+		if !found {
+			t.Fatalf("generated env missing %q: %#v", env, o.Envs())
+		}
+	}
+}
+
 func writeMinimalPE(t *testing.T, path string, machine uint16) {
 	t.Helper()
 

@@ -32,8 +32,10 @@ vars, check for `wine`, `gamescope`, and `winetricks`, and generate `gr.Option`
 defaults for a Windows executable.
 
 When `LANG` is not explicitly configured, `autorunner` tries to infer it from PE
-resource language IDs and known locale markers. For example, Japanese metadata
-will select `LANG=ja_JP.UTF-8`; otherwise it falls back to `C.UTF-8`.
+resource language IDs and known locale markers, including Japanese Shift-JIS
+markers such as `SHIFTJIS_CHARSET`. For example, Japanese metadata will select
+`LANG=ja_JP.UTF-8` and `LC_ALL=ja_JP.UTF-8`; otherwise it falls back to
+`C.UTF-8`.
 
 For 32-bit executables, `autorunner` detects the architecture but does not force
 `WINEARCH=win32` by default. Modern WoW64 Wine builds can run 32-bit executables

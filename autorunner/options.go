@@ -61,7 +61,13 @@ func AutoOptionsForExe(exePath string, cfg DefaultOptionsConfig) (DefaultOptions
 	if usedDefaultEnv || envCfg.Lang == "" {
 		if lang, err := DetectWineLang(absExe); err == nil && lang != "" {
 			envCfg.Lang = lang
+			if usedDefaultEnv || envCfg.LCAll == "" {
+				envCfg.LCAll = lang
+			}
 		}
+	}
+	if envCfg.LCAll == "" && envCfg.Lang != "" {
+		envCfg.LCAll = envCfg.Lang
 	}
 
 	opts := make([]gr.Option, 0, 5)
@@ -98,6 +104,7 @@ func AutoOptionsForExe(exePath string, cfg DefaultOptionsConfig) (DefaultOptions
 
 func isZeroWineEnvConfig(cfg WineEnvConfig) bool {
 	return cfg.Lang == "" &&
+		cfg.LCAll == "" &&
 		cfg.WineDebug == "" &&
 		!cfg.DisableWineMenuBuild &&
 		!cfg.QuietDXVKLogs &&

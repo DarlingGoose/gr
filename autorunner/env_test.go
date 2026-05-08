@@ -5,6 +5,7 @@ import "testing"
 func TestRecommendedWineEnv(t *testing.T) {
 	env := RecommendedWineEnv(WineEnvConfig{
 		Lang:                 "en_US.UTF-8",
+		LCAll:                "en_US.UTF-8",
 		WineDebug:            "-all",
 		DisableWineMenuBuild: true,
 		QuietDXVKLogs:        true,
@@ -18,6 +19,7 @@ func TestRecommendedWineEnv(t *testing.T) {
 
 	want := []string{
 		"LANG=ja_JP.UTF-8",
+		"LC_ALL=en_US.UTF-8",
 		"WINEDEBUG=-all",
 		"WINEDLLOVERRIDES=winemenubuilder.exe=d",
 		"DXVK_LOG_LEVEL=none",

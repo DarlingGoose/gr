@@ -24,7 +24,7 @@ func TestWineLangForWindowsLangID(t *testing.T) {
 
 func TestDetectWineLangFromMarkers(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "game.exe")
-	if err := os.WriteFile(path, []byte("Japanese release"), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte("Font.CharsetSHIFTJIS_CHARSET"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
