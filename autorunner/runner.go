@@ -35,7 +35,10 @@ func newRunner(winePrefix string, deps DependencyStatus) (gr.Runner, error) {
 			gamescope.WithWine(true),
 			gamescope.WithDefaultWinePrefix(winePrefix),
 			gamescope.WithResolution(w, h),
+			gamescope.WithOutputResolution(w, h),
 			gamescope.WithFullscreen(false),
+			gamescope.WithFilter("linear"),
+			gamescope.WithFilter("nearest"),
 			gamescope.WithExposeWayland(monitors.IsWayland()),
 		), nil
 	default:
