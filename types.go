@@ -58,6 +58,7 @@ type Options struct {
 type Process struct {
 	ImageName string
 	PID       int
+	WinePID   int
 	Session   string
 	SessionID string
 	MemUsage  string

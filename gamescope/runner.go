@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -78,6 +79,9 @@ func (r *Runner) Run(ctx context.Context, target string, opts ...gr.Option) (*gr
 			return nil, fmt.Errorf("start gamescope: %w", err)
 		}
 		proc := processFromCmd(cmd, r.GamescopeBin, args, env, gr.StatusRunning)
+		if pr, _ := r.List(ctx, gr.WithName(filepath.Base(target))); len(pr) == 1 {
+			proc.WinePID = pr[0].PID
+		}
 		stopGamescopeOnCancel(ctx, proc.PID, r.wineCleanup(prefix, env))
 		return proc, nil
 	}
@@ -87,6 +91,9 @@ func (r *Runner) Run(ctx context.Context, target string, opts ...gr.Option) (*gr
 	}
 
 	proc := processFromCmd(cmd, r.GamescopeBin, args, env, gr.StatusRunning)
+	if pr, _ := r.List(ctx, gr.WithName(filepath.Base(target))); len(pr) == 1 {
+		proc.WinePID = pr[0].PID
+	}
 	cleanup := r.wineCleanup(prefix, env)
 	defer cleanup()
 	defer cleanupProcessGroup(proc.PID)
@@ -136,6 +143,7 @@ func (r *Runner) List(ctx context.Context, opts ...gr.Option) ([]*gr.Process, er
 		filtered := make([]*gr.Process, 0, len(process))
 		for _, p := range process {
 			if o.MatchProcess(p) {
+				p.WinePID = p.PID
 				filtered = append(filtered, p)
 			}
 		}

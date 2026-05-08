@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -78,7 +79,11 @@ func (r *Runner) Run(ctx context.Context, command string, opts ...gr.Option) (*g
 		if err := cmd.Start(); err != nil {
 			return nil, fmt.Errorf("start wine command: %w", err)
 		}
-		return processFromCmd(cmd, r.WineBin, args, env, gr.StatusRunning), nil
+		proc := processFromCmd(cmd, r.WineBin, args, env, gr.StatusRunning)
+		if pr, _ := r.List(ctx, gr.WithName(filepath.Base(command))); len(pr) == 1 {
+			proc.WinePID = pr[0].PID
+		}
+		return proc, nil
 	}
 
 	if err := cmd.Start(); err != nil {
@@ -86,6 +91,9 @@ func (r *Runner) Run(ctx context.Context, command string, opts ...gr.Option) (*g
 	}
 
 	proc := processFromCmd(cmd, r.WineBin, args, env, gr.StatusRunning)
+	if pr, _ := r.List(ctx, gr.WithName(filepath.Base(command))); len(pr) == 1 {
+		proc.WinePID = pr[0].PID
+	}
 	if err := cmd.Wait(); err != nil {
 		proc.Status = gr.StatusExited
 		return proc, fmt.Errorf("run wine command: %w", err)
