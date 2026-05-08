@@ -2,7 +2,6 @@ package wine
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -126,32 +125,8 @@ func (r *Runner) List(ctx context.Context, opts ...gr.Option) ([]*gr.Process, er
 	o := gr.ApplyOptions(opts...)
 
 	prefix := o.WinePrefix()
-	if prefix == "" {
-		prefix = r.DefaultPrefix
-	}
+	return List(ctx, o.WinePrefix(), r.buildEnv(prefix, o), opts...)
 
-	if prefix == "" {
-		return nil, errors.New("wine prefix is required")
-	}
-	env := r.buildEnv(prefix, o)
-	cmd := exec.CommandContext(ctx, r.WineBin, "tasklist")
-	cmd.Env = env
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("wine tasklist failed: %w: %s", err, strings.TrimSpace(stderr.String()))
-	}
-	process := ParseTasklist(stdout.String())
-	filtered := make([]*gr.Process, 0, len(process))
-	for _, p := range process {
-		if o.MatchProcess(p) {
-			filtered = append(filtered, p)
-		}
-	}
-
-	return filtered, nil
 }
 
 func (r *Runner) Find(ctx context.Context, opts ...gr.Option) (*gr.Process, error) {
