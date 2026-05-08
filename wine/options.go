@@ -1,5 +1,11 @@
 package wine
 
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+)
+
 type Option func(*Options)
 
 type Options struct {
@@ -23,6 +29,46 @@ func ApplyOptions(opts ...Option) Options {
 	}
 
 	return o
+}
+
+func NewFromOptions(o Options) *Runner {
+	return &Runner{Options: o}
+}
+
+func Load(path string) (*Runner, error) {
+	o, err := LoadOptions(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewFromOptions(o), nil
+}
+
+func LoadOptions(path string) (Options, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return Options{}, fmt.Errorf("read wine options: %w", err)
+	}
+
+	var o Options
+	if err := json.Unmarshal(data, &o); err != nil {
+		return Options{}, fmt.Errorf("decode wine options: %w", err)
+	}
+
+	return o, nil
+}
+
+func (o Options) Save(path string) error {
+	data, err := json.MarshalIndent(o, "", "  ")
+	if err != nil {
+		return fmt.Errorf("encode wine options: %w", err)
+	}
+
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		return fmt.Errorf("write wine options: %w", err)
+	}
+
+	return nil
 }
 
 func WithName(name string) Option {

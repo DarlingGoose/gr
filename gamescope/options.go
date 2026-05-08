@@ -1,5 +1,11 @@
 package gamescope
 
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+)
+
 type Option func(*Options)
 
 type Options struct {
@@ -52,6 +58,51 @@ func ApplyOptions(opts ...Option) Options {
 	o.ExtraArgs = append([]string(nil), o.ExtraArgs...)
 
 	return o
+}
+
+func NewFromOptions(o Options) *Runner {
+	o.ExtraArgs = append([]string(nil), o.ExtraArgs...)
+	return &Runner{Options: o}
+}
+
+func Load(path string) (*Runner, error) {
+	o, err := LoadOptions(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewFromOptions(o), nil
+}
+
+func LoadOptions(path string) (Options, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return Options{}, fmt.Errorf("read gamescope options: %w", err)
+	}
+
+	var o Options
+	if err := json.Unmarshal(data, &o); err != nil {
+		return Options{}, fmt.Errorf("decode gamescope options: %w", err)
+	}
+
+	o.ExtraArgs = append([]string(nil), o.ExtraArgs...)
+
+	return o, nil
+}
+
+func (o Options) Save(path string) error {
+	o.ExtraArgs = append([]string(nil), o.ExtraArgs...)
+
+	data, err := json.MarshalIndent(o, "", "  ")
+	if err != nil {
+		return fmt.Errorf("encode gamescope options: %w", err)
+	}
+
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		return fmt.Errorf("write gamescope options: %w", err)
+	}
+
+	return nil
 }
 
 func WithName(name string) Option {

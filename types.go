@@ -37,6 +37,7 @@ type Runner interface {
 
 type Options struct {
 	background bool
+	workingDir string
 	args       []string
 	envs       []string
 

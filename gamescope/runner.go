@@ -30,6 +30,10 @@ func (r *Runner) GetOptions() Options {
 	return o
 }
 
+func (r *Runner) Save(path string) error {
+	return r.GetOptions().Save(path)
+}
+
 func (r *Runner) GetOption(key string) (interface{}, error) {
 	return gr.GetOption(r.Options, key)
 
@@ -64,6 +68,9 @@ func (r *Runner) Run(ctx context.Context, target string, opts ...gr.Option) (*gr
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
+	if o.WorkingDir() != "" {
+		cmd.Dir = o.WorkingDir()
+	}
 	prepareGamescopeCommand(cmd)
 
 	if o.Background() {

@@ -18,6 +18,12 @@ func WithBackground(v bool) Option {
 	}
 }
 
+func WithWorkingDir(dir string) Option {
+	return func(o *Options) {
+		o.workingDir = dir
+	}
+}
+
 func WithArgs(args ...string) Option {
 	return func(o *Options) {
 		o.args = append(o.args, args...)

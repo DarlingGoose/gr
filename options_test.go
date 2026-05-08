@@ -5,6 +5,7 @@ import "testing"
 func TestOptionsGetters(t *testing.T) {
 	o := ApplyOptions(
 		WithBackground(true),
+		WithWorkingDir("/tmp/game"),
 		WithArgs("one", "two"),
 		WithEnv("A=B", "C=D"),
 		WithWinePrefix("/tmp/prefix"),
@@ -18,6 +19,9 @@ func TestOptionsGetters(t *testing.T) {
 
 	if !o.Background() {
 		t.Fatal("Background() = false, want true")
+	}
+	if got := o.WorkingDir(); got != "/tmp/game" {
+		t.Fatalf("WorkingDir() = %q, want %q", got, "/tmp/game")
 	}
 	if got := o.WinePrefix(); got != "/tmp/prefix" {
 		t.Fatalf("WinePrefix() = %q, want %q", got, "/tmp/prefix")

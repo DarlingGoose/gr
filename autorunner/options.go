@@ -9,6 +9,7 @@ import (
 
 type DefaultOptionsConfig struct {
 	WinePrefix          string
+	WorkingDir          string
 	UseGamescope        bool
 	RequireWinetricks   bool
 	ForceWineArch       bool
@@ -66,6 +67,13 @@ func AutoOptionsForExe(exePath string, cfg DefaultOptionsConfig) (DefaultOptions
 	opts := make([]gr.Option, 0, 5)
 	if cfg.WinePrefix != "" {
 		opts = append(opts, gr.WithWinePrefix(cfg.WinePrefix))
+	}
+	workingDir := cfg.WorkingDir
+	if workingDir == "" {
+		workingDir = filepath.Dir(absExe)
+	}
+	if workingDir != "" {
+		opts = append(opts, gr.WithWorkingDir(workingDir))
 	}
 	if wineArch := defaultWineArch(arch, cfg); wineArch != "" {
 		opts = append(opts, gr.WithSystemArch(wineArch))

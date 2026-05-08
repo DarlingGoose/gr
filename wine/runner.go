@@ -35,6 +35,10 @@ func (r *Runner) GetOptions() Options {
 	return r.Options
 }
 
+func (r *Runner) Save(path string) error {
+	return r.GetOptions().Save(path)
+}
+
 func (r *Runner) Run(ctx context.Context, command string, opts ...gr.Option) (*gr.Process, error) {
 	o := gr.ApplyOptions(opts...)
 
@@ -66,6 +70,9 @@ func (r *Runner) Run(ctx context.Context, command string, opts ...gr.Option) (*g
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
+	if o.WorkingDir() != "" {
+		cmd.Dir = o.WorkingDir()
+	}
 
 	if o.Background() {
 		if err := cmd.Start(); err != nil {

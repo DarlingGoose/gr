@@ -10,6 +10,10 @@ func (o Options) Background() bool {
 	return o.background
 }
 
+func (o Options) WorkingDir() string {
+	return o.workingDir
+}
+
 func (o Options) Args() []string {
 	return append([]string(nil), o.args...)
 }
