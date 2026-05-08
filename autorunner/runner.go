@@ -11,9 +11,14 @@ import (
 
 func NewRunner(winePrefix string) (gr.Runner, error) {
 	deps := CheckDependencies(true)
-	if deps.WineInstalled() {
+	return newRunner(winePrefix, deps)
+}
+
+func newRunner(winePrefix string, deps DependencyStatus) (gr.Runner, error) {
+	if !deps.WineInstalled() {
 		return nil, errors.New("wine is not installed")
 	}
+
 	switch {
 	case deps.GamescopeInstalled():
 		var w, h int

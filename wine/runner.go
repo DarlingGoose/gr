@@ -35,7 +35,7 @@ func (r *Runner) GetOptions() Options {
 	return r.Options
 }
 
-func (r *Runner) Run(ctx context.Context, command string, opts ...gr.Option) error {
+func (r *Runner) Run(ctx context.Context, command string, opts ...gr.Option) (*gr.Process, error) {
 	o := gr.ApplyOptions(opts...)
 
 	prefix := o.WinePrefix()
@@ -44,18 +44,18 @@ func (r *Runner) Run(ctx context.Context, command string, opts ...gr.Option) err
 	}
 
 	if prefix == "" {
-		return errors.New("wine prefix is required")
+		return nil, errors.New("wine prefix is required")
 	}
 
 	if err := os.MkdirAll(prefix, 0o755); err != nil {
-		return fmt.Errorf("create wine prefix: %w", err)
+		return nil, fmt.Errorf("create wine prefix: %w", err)
 	}
 
 	env := r.buildEnv(prefix, o)
 
 	if deps := o.Dependencies(); len(deps) > 0 {
 		if err := r.installDeps(ctx, env, deps); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -69,16 +69,23 @@ func (r *Runner) Run(ctx context.Context, command string, opts ...gr.Option) err
 
 	if o.Background() {
 		if err := cmd.Start(); err != nil {
-			return fmt.Errorf("start wine command: %w", err)
+			return nil, fmt.Errorf("start wine command: %w", err)
 		}
-		return nil
+		return processFromCmd(cmd, r.WineBin, args, env, gr.StatusRunning), nil
 	}
 
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("run wine command: %w", err)
+	if err := cmd.Start(); err != nil {
+		return nil, fmt.Errorf("start wine command: %w", err)
 	}
 
-	return nil
+	proc := processFromCmd(cmd, r.WineBin, args, env, gr.StatusRunning)
+	if err := cmd.Wait(); err != nil {
+		proc.Status = gr.StatusExited
+		return proc, fmt.Errorf("run wine command: %w", err)
+	}
+
+	proc.Status = gr.StatusExited
+	return proc, nil
 }
 
 func (r *Runner) List(ctx context.Context, opts ...gr.Option) ([]*gr.Process, error) {
@@ -169,6 +176,22 @@ func (r *Runner) buildEnv(prefix string, o gr.Options) []string {
 	}
 
 	return env
+}
+
+func processFromCmd(cmd *exec.Cmd, imageName string, args []string, env []string, status gr.Status) *gr.Process {
+	p := &gr.Process{
+		ImageName: imageName,
+		Status:    status,
+		Cmdline:   append([]string{imageName}, args...),
+		Environ:   append([]string(nil), env...),
+		Cmd:       cmd,
+	}
+
+	if cmd.Process != nil {
+		p.PID = cmd.Process.Pid
+	}
+
+	return p
 }
 
 func normalizeArch(arch string) string {

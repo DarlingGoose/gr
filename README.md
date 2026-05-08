@@ -19,7 +19,12 @@ r := gamescope.New(
 	gamescope.WithFullscreen(true),
 )
 
-return r.Run(ctx, defaults.ExePath, defaults.Options...)
+proc, err := r.Run(ctx, defaults.ExePath, defaults.Options...)
+if err != nil {
+	return err
+}
+_ = proc
+return nil
 ```
 
 `autorunner` can detect PE executable architecture, build recommended Wine env

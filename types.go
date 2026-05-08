@@ -28,7 +28,7 @@ func (s Status) String() string {
 }
 
 type Runner interface {
-	Run(ctx context.Context, cmd string, opts ...Option) error
+	Run(ctx context.Context, cmd string, opts ...Option) (*Process, error)
 	List(ctx context.Context, opts ...Option) ([]*Process, error)
 	Find(ctx context.Context, opts ...Option) (*Process, error)
 	GetOption(key string) (interface{}, error)

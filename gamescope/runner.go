@@ -36,11 +36,11 @@ func (r *Runner) GetOptionKeys() ([]string, error) {
 	return gr.GetOptionKeys(r.Options)
 }
 
-func (r *Runner) Run(ctx context.Context, target string, opts ...gr.Option) error {
+func (r *Runner) Run(ctx context.Context, target string, opts ...gr.Option) (*gr.Process, error) {
 	o := gr.ApplyOptions(opts...)
 
 	if target == "" {
-		return errors.New("target command is required")
+		return nil, errors.New("target command is required")
 	}
 
 	env := r.buildEnv(o)
@@ -65,16 +65,23 @@ func (r *Runner) Run(ctx context.Context, target string, opts ...gr.Option) erro
 
 	if o.Background() {
 		if err := cmd.Start(); err != nil {
-			return fmt.Errorf("start gamescope: %w", err)
+			return nil, fmt.Errorf("start gamescope: %w", err)
 		}
-		return nil
+		return processFromCmd(cmd, r.GamescopeBin, args, env, gr.StatusRunning), nil
 	}
 
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("run gamescope: %w", err)
+	if err := cmd.Start(); err != nil {
+		return nil, fmt.Errorf("start gamescope: %w", err)
 	}
 
-	return nil
+	proc := processFromCmd(cmd, r.GamescopeBin, args, env, gr.StatusRunning)
+	if err := cmd.Wait(); err != nil {
+		proc.Status = gr.StatusExited
+		return proc, fmt.Errorf("run gamescope: %w", err)
+	}
+
+	proc.Status = gr.StatusExited
+	return proc, nil
 }
 
 func (r *Runner) List(ctx context.Context, opts ...gr.Option) ([]*gr.Process, error) {
@@ -208,6 +215,22 @@ func (r *Runner) buildEnv(o gr.Options) []string {
 	}
 
 	return env
+}
+
+func processFromCmd(cmd *exec.Cmd, imageName string, args []string, env []string, status gr.Status) *gr.Process {
+	p := &gr.Process{
+		ImageName: imageName,
+		Status:    status,
+		Cmdline:   append([]string{imageName}, args...),
+		Environ:   append([]string(nil), env...),
+		Cmd:       cmd,
+	}
+
+	if cmd.Process != nil {
+		p.PID = cmd.Process.Pid
+	}
+
+	return p
 }
 
 func normalizeArch(arch string) string {

@@ -1,6 +1,11 @@
 package wine
 
-import "testing"
+import (
+	"context"
+	"testing"
+
+	"github.com/DarlingGoose/gr"
+)
 
 func TestApplyOptionsAndGetOptions(t *testing.T) {
 	r := New(
@@ -37,5 +42,33 @@ func TestApplyOptionsDefaults(t *testing.T) {
 	}
 	if got := o.WineTricksBin; got != "winetricks" {
 		t.Fatalf("WineTricksBin = %q, want %q", got, "winetricks")
+	}
+}
+
+func TestRunReturnsProcess(t *testing.T) {
+	r := New(
+		WithWineBin("/bin/true"),
+		WithDefaultPrefix(t.TempDir()),
+	)
+
+	proc, err := r.Run(context.Background(), "ignored")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if proc == nil {
+		t.Fatal("Run returned nil process")
+	}
+	if got := proc.ImageName; got != "/bin/true" {
+		t.Fatalf("ImageName = %q, want %q", got, "/bin/true")
+	}
+	if got := proc.Status; got != gr.StatusExited {
+		t.Fatalf("Status = %s, want %s", got, gr.StatusExited)
+	}
+	if proc.PID <= 0 {
+		t.Fatalf("PID = %d, want positive PID", proc.PID)
+	}
+	if proc.Cmd == nil {
+		t.Fatal("Cmd = nil")
 	}
 }

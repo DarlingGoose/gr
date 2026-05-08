@@ -79,12 +79,12 @@ func InstallThenRun(ctx context.Context, runner gr.Runner, cfg RunConfig) (RunPl
 	}
 
 	if plan.InstallerOptions.ExePath != "" {
-		if err := runner.Run(ctx, plan.InstallerOptions.ExePath, plan.InstallerOptions.Options...); err != nil {
+		if _, err := runner.Run(ctx, plan.InstallerOptions.ExePath, plan.InstallerOptions.Options...); err != nil {
 			return plan, fmt.Errorf("run installer: %w", err)
 		}
 	}
 
-	if err := runner.Run(ctx, plan.GameOptions.ExePath, plan.GameOptions.Options...); err != nil {
+	if _, err := runner.Run(ctx, plan.GameOptions.ExePath, plan.GameOptions.Options...); err != nil {
 		return plan, fmt.Errorf("run game: %w", err)
 	}
 

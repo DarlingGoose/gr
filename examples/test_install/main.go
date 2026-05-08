@@ -86,7 +86,8 @@ func runInstallerOnly(ctx context.Context, r gr.Runner, setupPath string, auto a
 		return err
 	}
 
-	return r.Run(ctx, opts.ExePath, opts.Options...)
+	_, err = r.Run(ctx, opts.ExePath, opts.Options...)
+	return err
 }
 
 func newRunner(useGamescope bool, prefix string) gr.Runner {
