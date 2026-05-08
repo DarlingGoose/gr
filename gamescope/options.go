@@ -3,13 +3,16 @@ package gamescope
 type Option func(*Options)
 
 type Options struct {
-	Name         string
-	GamescopeBin string
-	WineBin      string
+	Name          string
+	GamescopeBin  string
+	WineBin       string
+	WineServerBin string
 
 	DefaultWinePrefix string
 
-	UseWine bool
+	UseWine        bool
+	WineStartWait  bool
+	KillWineOnExit bool
 
 	Width        int
 	Height       int
@@ -32,9 +35,12 @@ type Options struct {
 
 func ApplyOptions(opts ...Option) Options {
 	o := Options{
-		Name:         "gamescope",
-		GamescopeBin: "gamescope",
-		WineBin:      "wine",
+		Name:           "gamescope",
+		GamescopeBin:   "gamescope",
+		WineBin:        "wine",
+		WineServerBin:  "wineserver",
+		WineStartWait:  true,
+		KillWineOnExit: true,
 	}
 
 	for _, opt := range opts {
@@ -72,9 +78,29 @@ func WithWineBin(path string) Option {
 	}
 }
 
+func WithWineServerBin(path string) Option {
+	return func(r *Options) {
+		if path != "" {
+			r.WineServerBin = path
+		}
+	}
+}
+
 func WithWine(v bool) Option {
 	return func(r *Options) {
 		r.UseWine = v
+	}
+}
+
+func WithWineStartWait(v bool) Option {
+	return func(r *Options) {
+		r.WineStartWait = v
+	}
+}
+
+func WithKillWineOnExit(v bool) Option {
+	return func(r *Options) {
+		r.KillWineOnExit = v
 	}
 }
 

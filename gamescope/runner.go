@@ -46,18 +46,18 @@ func (r *Runner) Run(ctx context.Context, target string, opts ...gr.Option) (*gr
 	}
 
 	env := r.buildEnv(o)
+	prefix := r.winePrefix(o)
 
 	args := r.gamescopeArgs()
 
 	args = append(args, "--")
 
 	if r.UseWine {
-		args = append(args, r.WineBin, target)
+		args = append(args, r.wineCommand(target, o.Args())...)
 	} else {
 		args = append(args, target)
+		args = append(args, o.Args()...)
 	}
-
-	args = append(args, o.Args()...)
 
 	cmd := exec.CommandContext(ctx, r.GamescopeBin, args...)
 	cmd.Env = env
@@ -71,7 +71,7 @@ func (r *Runner) Run(ctx context.Context, target string, opts ...gr.Option) (*gr
 			return nil, fmt.Errorf("start gamescope: %w", err)
 		}
 		proc := processFromCmd(cmd, r.GamescopeBin, args, env, gr.StatusRunning)
-		stopProcessGroupOnCancel(ctx, proc.PID)
+		stopGamescopeOnCancel(ctx, proc.PID, r.wineCleanup(prefix, env))
 		return proc, nil
 	}
 
@@ -80,6 +80,8 @@ func (r *Runner) Run(ctx context.Context, target string, opts ...gr.Option) (*gr
 	}
 
 	proc := processFromCmd(cmd, r.GamescopeBin, args, env, gr.StatusRunning)
+	cleanup := r.wineCleanup(prefix, env)
+	defer cleanup()
 	defer cleanupProcessGroup(proc.PID)
 
 	if err := cmd.Wait(); err != nil {
@@ -89,6 +91,16 @@ func (r *Runner) Run(ctx context.Context, target string, opts ...gr.Option) (*gr
 
 	proc.Status = gr.StatusExited
 	return proc, nil
+}
+
+func (r *Runner) wineCommand(target string, targetArgs []string) []string {
+	args := []string{r.WineBin}
+	if r.WineStartWait {
+		args = append(args, "start", "/wait", "/unix")
+	}
+	args = append(args, target)
+	args = append(args, targetArgs...)
+	return args
 }
 
 func (r *Runner) List(ctx context.Context, opts ...gr.Option) ([]*gr.Process, error) {
@@ -199,10 +211,7 @@ func (r *Runner) gamescopeArgs() []string {
 func (r *Runner) buildEnv(o gr.Options) []string {
 	env := os.Environ()
 
-	prefix := o.WinePrefix()
-	if prefix == "" {
-		prefix = r.DefaultWinePrefix
-	}
+	prefix := r.winePrefix(o)
 
 	if prefix != "" {
 		env = upsertEnv(env, "WINEPREFIX", prefix)
@@ -230,6 +239,15 @@ func (r *Runner) buildEnv(o gr.Options) []string {
 	}
 
 	return env
+}
+
+func (r *Runner) winePrefix(o gr.Options) string {
+	prefix := o.WinePrefix()
+	if prefix == "" {
+		prefix = r.DefaultWinePrefix
+	}
+
+	return prefix
 }
 
 func processFromCmd(cmd *exec.Cmd, imageName string, args []string, env []string, status gr.Status) *gr.Process {
@@ -273,7 +291,7 @@ func cleanupProcessGroup(pid int) {
 	_ = terminateProcessGroup(pid)
 }
 
-func stopProcessGroupOnCancel(ctx context.Context, pid int) {
+func stopGamescopeOnCancel(ctx context.Context, pid int, cleanup func()) {
 	if ctx == nil || ctx.Done() == nil || pid <= 0 {
 		return
 	}
@@ -281,7 +299,23 @@ func stopProcessGroupOnCancel(ctx context.Context, pid int) {
 	go func() {
 		<-ctx.Done()
 		_ = terminateProcessGroup(pid)
+		cleanup()
 	}()
+}
+
+func (r *Runner) wineCleanup(prefix string, env []string) func() {
+	if !r.UseWine || !r.KillWineOnExit || prefix == "" {
+		return func() {}
+	}
+
+	return func() {
+		ctx, cancel := context.WithTimeout(context.Background(), gamescopeShutdownGrace)
+		defer cancel()
+
+		cmd := exec.CommandContext(ctx, r.WineServerBin, "-k")
+		cmd.Env = env
+		_ = cmd.Run()
+	}
 }
 
 func terminateProcessGroup(pid int) error {
