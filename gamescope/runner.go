@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/DarlingGoose/gr"
 	"github.com/DarlingGoose/gr/wine"
@@ -62,12 +64,15 @@ func (r *Runner) Run(ctx context.Context, target string, opts ...gr.Option) (*gr
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
+	prepareGamescopeCommand(cmd)
 
 	if o.Background() {
 		if err := cmd.Start(); err != nil {
 			return nil, fmt.Errorf("start gamescope: %w", err)
 		}
-		return processFromCmd(cmd, r.GamescopeBin, args, env, gr.StatusRunning), nil
+		proc := processFromCmd(cmd, r.GamescopeBin, args, env, gr.StatusRunning)
+		stopProcessGroupOnCancel(ctx, proc.PID)
+		return proc, nil
 	}
 
 	if err := cmd.Start(); err != nil {
@@ -75,6 +80,8 @@ func (r *Runner) Run(ctx context.Context, target string, opts ...gr.Option) (*gr
 	}
 
 	proc := processFromCmd(cmd, r.GamescopeBin, args, env, gr.StatusRunning)
+	defer cleanupProcessGroup(proc.PID)
+
 	if err := cmd.Wait(); err != nil {
 		proc.Status = gr.StatusExited
 		return proc, fmt.Errorf("run gamescope: %w", err)
@@ -176,6 +183,14 @@ func (r *Runner) gamescopeArgs() []string {
 		args = append(args, "--expose-wayland")
 	}
 
+	if r.Scaler != "" {
+		args = append(args, "-S", r.Scaler)
+	}
+
+	if r.Filter != "" {
+		args = append(args, "-F", r.Filter)
+	}
+
 	args = append(args, r.ExtraArgs...)
 
 	return args
@@ -231,6 +246,65 @@ func processFromCmd(cmd *exec.Cmd, imageName string, args []string, env []string
 	}
 
 	return p
+}
+
+const gamescopeShutdownGrace = 5 * time.Second
+
+func prepareGamescopeCommand(cmd *exec.Cmd) {
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setpgid:   true,
+		Pdeathsig: syscall.SIGTERM,
+	}
+	cmd.Cancel = func() error {
+		if cmd.Process == nil {
+			return os.ErrProcessDone
+		}
+
+		return terminateProcessGroup(cmd.Process.Pid)
+	}
+	cmd.WaitDelay = gamescopeShutdownGrace
+}
+
+func cleanupProcessGroup(pid int) {
+	if pid <= 0 {
+		return
+	}
+
+	_ = terminateProcessGroup(pid)
+}
+
+func stopProcessGroupOnCancel(ctx context.Context, pid int) {
+	if ctx == nil || ctx.Done() == nil || pid <= 0 {
+		return
+	}
+
+	go func() {
+		<-ctx.Done()
+		_ = terminateProcessGroup(pid)
+	}()
+}
+
+func terminateProcessGroup(pid int) error {
+	err := signalProcessGroup(pid, syscall.SIGTERM)
+	time.AfterFunc(gamescopeShutdownGrace, func() {
+		_ = signalProcessGroup(pid, syscall.SIGKILL)
+	})
+	return err
+}
+
+func signalProcessGroup(pid int, sig syscall.Signal) error {
+	if pid <= 0 {
+		return os.ErrProcessDone
+	}
+
+	if err := syscall.Kill(-pid, sig); err != nil {
+		if errors.Is(err, syscall.ESRCH) {
+			return os.ErrProcessDone
+		}
+		return err
+	}
+
+	return nil
 }
 
 func normalizeArch(arch string) string {

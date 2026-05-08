@@ -24,6 +24,9 @@ type Options struct {
 	SteamDeckMode bool
 	ExposeWayland bool
 
+	Scaler string
+	Filter string
+
 	ExtraArgs []string
 }
 
@@ -128,6 +131,18 @@ func WithSteamDeckMode(v bool) Option {
 func WithExposeWayland(v bool) Option {
 	return func(r *Options) {
 		r.ExposeWayland = v
+	}
+}
+
+func WithScaler(scaler string) Option {
+	return func(r *Options) {
+		r.Scaler = scaler
+	}
+}
+
+func WithFilter(filter string) Option {
+	return func(r *Options) {
+		r.Filter = filter
 	}
 }
 
