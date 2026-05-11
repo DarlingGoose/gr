@@ -77,10 +77,15 @@ func (r *Runner) Run(ctx context.Context, target string, opts ...gr.Option) (*gr
 		if err := cmd.Start(); err != nil {
 			return nil, fmt.Errorf("start gamescope: %w", err)
 		}
+
 		proc := processFromCmd(cmd, r.GamescopeBin, args, env, gr.StatusRunning)
+
 		c := 10
 		for {
-			if pr, _ := r.List(ctx, gr.WithName(filepath.Base(gr.FindExe(args...))), gr.WithWinePrefix(o.WinePrefix())); len(pr) == 1 {
+			if pr, _ := r.List(ctx,
+				gr.WithName(filepath.Base(gr.FindExe(args...))),
+				gr.WithWinePrefix(o.WinePrefix()),
+			); len(pr) == 1 {
 				proc.WinePID = pr[0].PID
 				break
 			}
@@ -91,7 +96,12 @@ func (r *Runner) Run(ctx context.Context, target string, opts ...gr.Option) (*gr
 			c--
 		}
 
-		stopGamescopeOnCancel(ctx, proc.PID, r.wineCleanup(prefix, env))
+		cleanup := r.wineCleanup(prefix, env)
+		stopGamescopeOnCancel(ctx, proc.PID, cleanup)
+
+		// Important: reap the process later, but don't block Run().
+		gr.WaitBackgroundProcess(cmd, proc, cleanup)
+
 		return proc, nil
 	}
 

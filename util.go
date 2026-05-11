@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -152,4 +153,18 @@ func FindExe(args ...string) string {
 	}
 	return ""
 
+}
+
+func WaitBackgroundProcess(cmd *exec.Cmd, proc *Process, cleanup func()) {
+	go func() {
+		defer cleanup()
+
+		err := cmd.Wait()
+		if err != nil {
+			proc.Status = StatusExited
+			return
+		}
+
+		proc.Status = StatusExited
+	}()
 }
