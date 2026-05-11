@@ -52,8 +52,8 @@ func newRunner(winePrefix string, deps DependencyStatus, wineOpts []wine.Option,
 			gamescope.WithFullscreen(true),
 
 			// 3. Use AMD FSR for high-quality upscaling
-			gamescope.WithScaler("fsr"),
-
+			gamescope.WithScaler("fit"),
+			gamescope.WithFilter("fsr"),
 			// 4. Expose Wayland if applicable
 			gamescope.WithExposeWayland(monitors.IsWayland()),
 		}
