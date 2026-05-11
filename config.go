@@ -12,6 +12,7 @@ type Config struct {
 	PID          int      `json:"pid,omitempty"`
 	Session      string   `json:"session,omitempty"`
 	SessionID    string   `json:"session_id,omitempty"`
+	LogFile      string   `json:"logFile,omitempty"`
 }
 
 func NewConfig(opts ...Option) Config {
@@ -31,6 +32,7 @@ func (o Options) Config() Config {
 		PID:          o.pid,
 		Session:      o.session,
 		SessionID:    o.sessionID,
+		LogFile:      o.logFile,
 	}
 }
 
@@ -69,6 +71,9 @@ func (c Config) Options() []Option {
 	}
 	if c.SessionID != "" {
 		opts = append(opts, WithSessionID(c.SessionID))
+	}
+	if c.LogFile != "" {
+		opts = append(opts, WithLogFile(c.LogFile))
 	}
 
 	return opts

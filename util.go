@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -167,4 +168,25 @@ func WaitBackgroundProcess(cmd *exec.Cmd, proc *Process, cleanup func()) {
 
 		proc.Status = StatusExited
 	}()
+}
+
+func AttachGameLogs(cmd *exec.Cmd, logPath string) {
+	if strings.TrimSpace(logPath) == "" {
+		cmd.Stdout = io.Discard
+		cmd.Stderr = io.Discard
+		cmd.Stdin = nil
+		return
+	}
+
+	f, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	if err != nil {
+		cmd.Stdout = io.Discard
+		cmd.Stderr = io.Discard
+		cmd.Stdin = nil
+		return
+	}
+
+	cmd.Stdout = f
+	cmd.Stderr = f
+	cmd.Stdin = nil
 }

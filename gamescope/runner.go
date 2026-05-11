@@ -65,9 +65,7 @@ func (r *Runner) Run(ctx context.Context, target string, opts ...gr.Option) (*gr
 
 	cmd := exec.CommandContext(ctx, r.GamescopeBin, args...)
 	cmd.Env = env
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
+	gr.AttachGameLogs(cmd, o.LogFile())
 	if o.WorkingDir() != "" {
 		cmd.Dir = o.WorkingDir()
 	}

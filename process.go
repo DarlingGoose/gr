@@ -49,7 +49,9 @@ func (o Options) Session() string {
 func (o Options) SessionID() string {
 	return o.sessionID
 }
-
+func (o Options) LogFile() string {
+	return o.logFile
+}
 func (o Options) MatchProcess(p *Process) bool {
 	if p == nil {
 		return false

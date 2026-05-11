@@ -23,7 +23,11 @@ func WithWorkingDir(dir string) Option {
 		o.workingDir = dir
 	}
 }
-
+func WithLogFile(logFile string) Option {
+	return func(o *Options) {
+		o.workingDir = logFile
+	}
+}
 func WithArgs(args ...string) Option {
 	return func(o *Options) {
 		o.args = append(o.args, args...)

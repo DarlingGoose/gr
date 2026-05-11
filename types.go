@@ -53,6 +53,7 @@ type Options struct {
 	pid       int
 	session   string
 	sessionID string
+	logFile   string
 }
 
 type Process struct {

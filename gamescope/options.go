@@ -47,6 +47,12 @@ func ApplyOptions(opts ...Option) Options {
 		WineServerBin:  "wineserver",
 		WineStartWait:  true,
 		KillWineOnExit: true,
+		Width:          1280,
+		Height:         720,
+		Borderless:     true,
+		Fullscreen:     true,
+		OutputHeight:   1920,
+		OutputWidth:    1080,
 	}
 
 	for _, opt := range opts {

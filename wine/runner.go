@@ -68,9 +68,7 @@ func (r *Runner) Run(ctx context.Context, command string, opts ...gr.Option) (*g
 
 	cmd := exec.CommandContext(ctx, r.WineBin, args...)
 	cmd.Env = env
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
+	gr.AttachGameLogs(cmd, o.LogFile())
 	if o.WorkingDir() != "" {
 		cmd.Dir = o.WorkingDir()
 	}
@@ -150,7 +148,6 @@ func (r *Runner) installDeps(ctx context.Context, env []string, deps []string) e
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
-
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("install winetricks deps %v: %w", deps, err)
 	}
