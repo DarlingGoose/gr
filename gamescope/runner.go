@@ -147,7 +147,7 @@ func (r *Runner) List(ctx context.Context, opts ...gr.Option) ([]*gr.Process, er
 	o := gr.ApplyOptions(opts...)
 
 	if r.UseWine || o.WinePrefix() != "" || r.DefaultWinePrefix != "" {
-		return wine.List(ctx, o.WinePrefix(), r.buildEnv(o), opts...)
+		return wine.List(ctx, r.WineBin, r.buildEnv(o), opts...)
 	}
 
 	return listNativeProcesses(ctx, o)

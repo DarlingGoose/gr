@@ -18,16 +18,23 @@ func List(ctx context.Context, wineBin string, env []string, opts ...gr.Option) 
 	o := gr.ApplyOptions(opts...)
 
 	prefix := o.WinePrefix()
-
 	if prefix == "" {
 		return nil, errors.New("wine prefix is required for wine process listing")
+	}
+
+	if wineBin == "" {
+		wineBin = "wine"
+	}
+
+	if st, err := os.Stat(wineBin); err == nil && st.IsDir() {
+		return nil, fmt.Errorf("wine bin is a directory, got %q; did you pass wineprefix as wineBin?", wineBin)
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, wineBin, "tasklist")
-	cmd.Env = env
+	cmd.Env = append(os.Environ(), env...)
 
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
