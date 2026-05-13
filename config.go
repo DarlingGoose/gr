@@ -1,5 +1,13 @@
 package gr
 
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+)
+
 type Config struct {
 	Background   bool     `json:"background,omitempty"`
 	WorkingDir   string   `json:"working_dir,omitempty"`
@@ -15,8 +23,56 @@ type Config struct {
 	LogFile      string   `json:"logFile,omitempty"`
 }
 
+type GameConfig struct {
+	ExePath string `json:"exe_path,omitempty"`
+	Config  Config `json:"config,omitempty"`
+}
+
 func NewConfig(opts ...Option) Config {
 	return ApplyOptions(opts...).Config()
+}
+
+func NewGameConfig(exePath string, opts ...Option) GameConfig {
+	return GameConfig{
+		ExePath: exePath,
+		Config:  NewConfig(opts...),
+	}
+}
+
+func LoadConfig(path string) (Config, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return Config{}, fmt.Errorf("read config: %w", err)
+	}
+
+	var cfg Config
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		return Config{}, fmt.Errorf("decode config: %w", err)
+	}
+
+	return cfg, nil
+}
+
+func LoadGameConfig(path string) (GameConfig, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return GameConfig{}, fmt.Errorf("read game config: %w", err)
+	}
+
+	var cfg GameConfig
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		return GameConfig{}, fmt.Errorf("decode game config: %w", err)
+	}
+
+	return cfg, nil
+}
+
+func DeleteConfig(path string) error {
+	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("delete config: %w", err)
+	}
+
+	return nil
 }
 
 func (o Options) Config() Config {
@@ -34,6 +90,10 @@ func (o Options) Config() Config {
 		SessionID:    o.sessionID,
 		LogFile:      o.logFile,
 	}
+}
+
+func (c Config) Save(path string) error {
+	return writeJSON(path, c, "config")
 }
 
 func (c Config) Options() []Option {
@@ -77,4 +137,31 @@ func (c Config) Options() []Option {
 	}
 
 	return opts
+}
+
+func (c GameConfig) Save(path string) error {
+	return writeJSON(path, c, "game config")
+}
+
+func (c GameConfig) Options() []Option {
+	return c.Config.Options()
+}
+
+func writeJSON(path string, v interface{}, name string) error {
+	data, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return fmt.Errorf("encode %s: %w", name, err)
+	}
+
+	if dir := filepath.Dir(path); dir != "." && dir != "" {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return fmt.Errorf("create %s directory: %w", name, err)
+		}
+	}
+
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		return fmt.Errorf("write %s: %w", name, err)
+	}
+
+	return nil
 }

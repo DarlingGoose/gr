@@ -2,8 +2,10 @@ package wine
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 type Option func(*Options)
@@ -58,10 +60,24 @@ func LoadOptions(path string) (Options, error) {
 	return o, nil
 }
 
+func Delete(path string) error {
+	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("delete wine options: %w", err)
+	}
+
+	return nil
+}
+
 func (o Options) Save(path string) error {
 	data, err := json.MarshalIndent(o, "", "  ")
 	if err != nil {
 		return fmt.Errorf("encode wine options: %w", err)
+	}
+
+	if dir := filepath.Dir(path); dir != "." && dir != "" {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return fmt.Errorf("create wine options directory: %w", err)
+		}
 	}
 
 	if err := os.WriteFile(path, data, 0o644); err != nil {

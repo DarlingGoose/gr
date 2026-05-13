@@ -2,6 +2,8 @@ package wine
 
 import (
 	"context"
+	"errors"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -92,7 +94,7 @@ func TestRunSetsWorkingDir(t *testing.T) {
 }
 
 func TestSaveAndLoadRunner(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "wine.json")
+	path := filepath.Join(t.TempDir(), "configs", "wine.json")
 	r := New(
 		WithName("custom-wine"),
 		WithWineBin("wine-custom"),
@@ -121,5 +123,15 @@ func TestSaveAndLoadRunner(t *testing.T) {
 	}
 	if got := o.DefaultPrefix; got != "/tmp/prefix" {
 		t.Fatalf("DefaultPrefix = %q, want %q", got, "/tmp/prefix")
+	}
+
+	if err := Delete(path); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("deleted options still exist, stat err = %v", err)
+	}
+	if err := Delete(path); err != nil {
+		t.Fatalf("deleting missing options returned error: %v", err)
 	}
 }

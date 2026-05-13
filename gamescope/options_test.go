@@ -2,6 +2,8 @@ package gamescope
 
 import (
 	"context"
+	"errors"
+	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -192,7 +194,7 @@ func TestRunStopsOnContextCancel(t *testing.T) {
 }
 
 func TestSaveAndLoadRunner(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "gamescope.json")
+	path := filepath.Join(t.TempDir(), "configs", "gamescope.json")
 	r := New(
 		WithName("custom-gamescope"),
 		WithGamescopeBin("gamescope-custom"),
@@ -265,5 +267,15 @@ func TestSaveAndLoadRunner(t *testing.T) {
 	}
 	if got := o.ExtraArgs; !reflect.DeepEqual(got, []string{"--one", "--two"}) {
 		t.Fatalf("ExtraArgs = %#v, want [--one --two]", got)
+	}
+
+	if err := Delete(path); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("deleted options still exist, stat err = %v", err)
+	}
+	if err := Delete(path); err != nil {
+		t.Fatalf("deleting missing options returned error: %v", err)
 	}
 }

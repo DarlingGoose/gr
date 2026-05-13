@@ -9,18 +9,66 @@ import (
 	"github.com/DarlingGoose/gr/wine"
 )
 
+type RunnerConfig struct {
+	UseGamescope bool               `json:"use_gamescope"`
+	Wine         *wine.Options      `json:"wine,omitempty"`
+	Gamescope    *gamescope.Options `json:"gamescope,omitempty"`
+}
+
 func NewRunner(winePrefix string) (gr.Runner, error) {
 	deps := CheckDependencies(true)
 	return newRunner(winePrefix, deps, nil, nil)
 }
+
 func NewRunnerWithOptions(winePrefix string, wineOpts []wine.Option, gamescopeOptions []gamescope.Option) (gr.Runner, error) {
 	deps := CheckDependencies(true)
 	return newRunner(winePrefix, deps, wineOpts, gamescopeOptions)
 }
 
+func DefaultRunnerConfig(winePrefix string) (RunnerConfig, error) {
+	deps := CheckDependencies(true)
+	return defaultRunnerConfig(winePrefix, deps, nil, nil)
+}
+
+func DefaultRunnerConfigWithOptions(winePrefix string, wineOpts []wine.Option, gamescopeOptions []gamescope.Option) (RunnerConfig, error) {
+	deps := CheckDependencies(true)
+	return defaultRunnerConfig(winePrefix, deps, wineOpts, gamescopeOptions)
+}
+
+func RunnerConfigFor(r gr.Runner) (RunnerConfig, bool) {
+	switch r := r.(type) {
+	case *gamescope.Runner:
+		o := r.GetOptions()
+		return RunnerConfig{
+			UseGamescope: true,
+			Gamescope:    &o,
+		}, true
+	case *wine.Runner:
+		o := r.GetOptions()
+		return RunnerConfig{
+			Wine: &o,
+		}, true
+	default:
+		return RunnerConfig{}, false
+	}
+}
+
 func newRunner(winePrefix string, deps DependencyStatus, wineOpts []wine.Option, gamescopeOptions []gamescope.Option) (gr.Runner, error) {
+	cfg, err := defaultRunnerConfig(winePrefix, deps, wineOpts, gamescopeOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	if cfg.Gamescope != nil {
+		return gamescope.NewFromOptions(*cfg.Gamescope), nil
+	}
+
+	return wine.NewFromOptions(*cfg.Wine), nil
+}
+
+func defaultRunnerConfig(winePrefix string, deps DependencyStatus, wineOpts []wine.Option, gamescopeOptions []gamescope.Option) (RunnerConfig, error) {
 	if !deps.WineInstalled() {
-		return nil, errors.New("wine is not installed")
+		return RunnerConfig{}, errors.New("wine is not installed")
 	}
 
 	switch {
@@ -61,9 +109,11 @@ func newRunner(winePrefix string, deps DependencyStatus, wineOpts []wine.Option,
 			defaultOptions = append(defaultOptions, gamescopeOptions...)
 		}
 
-		return gamescope.New(
-			defaultOptions...,
-		), nil
+		o := gamescope.ApplyOptions(defaultOptions...)
+		return RunnerConfig{
+			UseGamescope: true,
+			Gamescope:    &o,
+		}, nil
 	default:
 		defaultOptions := []wine.Option{
 			wine.WithDefaultPrefix(winePrefix),
@@ -71,6 +121,9 @@ func newRunner(winePrefix string, deps DependencyStatus, wineOpts []wine.Option,
 		if len(wineOpts) > 0 {
 			defaultOptions = append(defaultOptions, wineOpts...)
 		}
-		return wine.New(defaultOptions...), nil
+		o := wine.ApplyOptions(defaultOptions...)
+		return RunnerConfig{
+			Wine: &o,
+		}, nil
 	}
 }
