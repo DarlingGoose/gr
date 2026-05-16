@@ -50,17 +50,53 @@ r := gamescope.New(
 	gamescope.WithFullscreen(true),
 )
 
-_, err := installer.InstallThenRun(ctx, r, installer.RunConfig{
-	InstallerPath: "setup.exe",
-	GamePath:      "Game.exe",
-	Auto: autorunner.DefaultOptionsConfig{
-		WinePrefix:   "/home/me/.local/share/gr/prefixes/game",
-		UseGamescope: true,
-		Dependencies: []string{"vcrun2022", "dxvk"},
-	},
-})
+cfg := installer.NewRunConfig("Game.exe")
+cfg.InstallerPath = "setup.exe"
+cfg.Auto = autorunner.DefaultOptionsConfig{
+	WinePrefix:   "/home/me/.local/share/gr/prefixes/game",
+	UseGamescope: true,
+	Dependencies: []string{"vcrun2022", "dxvk"},
+}
+
+_, err := installer.InstallThenRun(ctx, r, cfg)
 ```
 
 `installer` validates that the setup executable looks like an installer before it
 runs it. After the installer exits, it runs the game with generated Wine options
 for the game executable.
+
+Archives can be extracted before running the game. For a multipart RAR
+self-extracting set such as `RJ204938.part1.exe`, `RJ204938.part2.rar`, and
+later parts in the same directory, pass the first volume. `unrar x` will resolve
+the remaining parts from that directory.
+
+```go
+cfg := installer.NewRunConfig("Game.exe")
+cfg.ArchivePath = "RJ204938.part1.exe"
+cfg.ExtractDir = "/home/me/.local/share/gr/games/RJ204938"
+cfg.Auto = autorunner.DefaultOptionsConfig{
+	WinePrefix: "/home/me/.local/share/gr/prefixes/rj204938",
+}
+
+_, err := installer.InstallThenRun(ctx, r, cfg)
+```
+
+Plain ZIP archives are extracted directly:
+
+```go
+cfg := installer.NewRunConfig("Game.exe")
+cfg.ArchivePath = "sonataria_ver.1.05.zip"
+cfg.ExtractDir = "/home/me/.local/share/gr/games/sonataria"
+
+_, err := installer.InstallThenRun(ctx, r, cfg)
+```
+
+InstallShield self-extracting archives use `7z x`:
+
+```go
+cfg := installer.NewRunConfig("Game.exe")
+cfg.ArchivePath = "Goodbye Tired Stars 1.05.exe"
+cfg.ExtractDir = "/home/me/.local/share/gr/games/goodbye-tired-stars"
+
+_, err := installer.InstallThenRun(ctx, r, cfg)
+```
